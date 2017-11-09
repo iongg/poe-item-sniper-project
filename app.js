@@ -45,14 +45,17 @@ const getCurrencyToChaosRatio = (name) => __awaiter(this, void 0, void 0, functi
         console.log(e);
     }
 });
+//Fetches unique item prices from the poe.ninja API, and filters any that have a value under the chaosCutOffPoint
 const getUniquePrices = () => __awaiter(this, void 0, void 0, function* () {
     try {
+        //poe.ninja API routes
         let armourResponse = yield axios_1.default.get(`http://cdn.poe.ninja/api/Data/GetUniqueArmourOverview?league=${currentLeague}`);
         let weaponsResponse = yield axios_1.default.get(`http://cdn.poe.ninja/api/Data/GetUniqueWeaponOverview?league=${currentLeague}`);
         let flasksResponse = yield axios_1.default.get(`http://cdn.poe.ninja/api/Data/GetUniqueFlaskOverview?league=${currentLeague}`);
         let jewelryResponse = yield axios_1.default.get(`http://cdn.poe.ninja/api/Data/GetUniqueAccessoryOverview?league=${currentLeague}`);
         let jewelsResponse = yield axios_1.default.get(`http://cdn.poe.ninja/api/Data/GetUniqueJewelOverview?league=${currentLeague}`);
         let filteredUniques = [];
+        //Pushing items that are above the chaosCutOffPoint to the filtered uniques array
         armourResponse.data.lines.forEach((item) => {
             if (item.chaosValue >= chaosCutOffPoint && item.count >= 10) {
                 filteredUniques.push(item);
@@ -126,7 +129,6 @@ let filterLoop = () => {
             let uniques = [];
             //Filter out the unique items
             publicStashes.forEach((stash) => {
-                let j = 0;
                 try {
                     stash.items.forEach((item) => {
                         //If the Item IS UNIQUE, ISNT CORRUPTED, IS IDENTIFIED, AND HAS A NOTE
@@ -134,21 +136,29 @@ let filterLoop = () => {
                             //Store the actual note in another place, replace note with the chaos value of the item,
                             //trim unique name from the way its presented in the public stash api
                             item.icon = item.note; //Not pretty but storing the actual note is useful for the WTB message
+                            //Replaces the ~b/o and ~price with nothing
                             item.note = item.note.replace('~b/o', '');
                             item.note = item.note.replace('~price', '');
+                            //Trims white spaces on the ends
                             item.note = item.note.trim();
+                            //if the item is priced in exalts, replaces the exa in the string with nothing
+                            //trims the string again, and converts the string to a number and converts that into the chaos equivalent
                             if (item.note.includes('exa')) {
                                 item.note = item.note.replace('exa', '');
                                 item.note = item.note.trim();
                                 item.note = Number(item.note) * exaltToChaos;
+                                //If item is already priced in chaos, just replaces 'chaos' with nothing,
+                                // trims the string and converts the stringto a number
                             }
                             else if (item.note.includes('chaos')) {
                                 item.note = item.note.replace('chaos', '');
                                 item.note = item.note.trim();
                                 item.note = Number(item.note);
                             }
+                            //Trims extra data in the name string not related to the actual name of the item.
                             item.name = item.name.slice(item.name.lastIndexOf('>') + 1);
-                            //Count socket group to determine how many links an item has, should be able to deal with reverse 5l's
+                            //Count sockets in a group to determine how many links an item has, should be able to deal with reverse 5l's
+                            //Socket 0 accounts for normal 5links and 6 links
                             let links = 0;
                             if (item.sockets.length > 0) {
                                 item.sockets.forEach((socket) => {
@@ -157,6 +167,7 @@ let filterLoop = () => {
                                     }
                                 });
                             }
+                            //Socket 1 to account for reverse 5 links
                             if (item.sockets.length > 0 && links <= 1) {
                                 links = 0;
                                 item.sockets.forEach((socket) => {
@@ -165,11 +176,12 @@ let filterLoop = () => {
                                     }
                                 });
                             }
+                            //If less than 5 links default to 0
                             if (links < 5) {
                                 links = 0;
                             }
                             item.sockets = links;
-                            //Designate Vinktars properly
+                            //Sort vinktar flasks into the right category, using the same format as the variant variable on poe.ninja
                             if (item.name === 'Vessel of Vinktar') {
                                 item.explicitMods.forEach((mod) => {
                                     if (mod.includes('Spells')) {
@@ -190,7 +202,6 @@ let filterLoop = () => {
                                 });
                             }
                             //Push an items that passed the check to an array
-                            j++;
                             uniques.push(item);
                         }
                     });
