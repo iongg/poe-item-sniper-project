@@ -121,14 +121,9 @@ let filterLoop =  () => {
             //Prints out how many stashes we got back, mainly for debugging
             // console.log(`Number of stashes ${response.data.stashes.length}`);
 
-            //Filters out the non public stashes
-            let publicStashes = await _.filter(response.data.stashes, (stash) => stash.public);
-            //Prints out how many public stashes we got back, mainly for debugging
-            // console.log(`Number of public stashes ${publicStashes.length}`);
-
             //Filters out stashes that have no items, and stashes not in the currently assigned league
-            let leagueStashes = await _.filter(publicStashes, (stash) => {
-                if (stash.items.length > 0) {
+            let leagueStashes = await _.filter(response.data.stashes, (stash) => {
+                if (stash.public && stash.items.length > 0) {
                     return stash.items[0].league === currentLeague;
                 } else {
                     return false;
@@ -140,7 +135,7 @@ let filterLoop =  () => {
 
             let uniques: any[] = [];
             //Filter out the unique items
-            publicStashes.forEach((stash) => {
+            leagueStashes.forEach((stash) => {
 
 
                 try {
@@ -227,12 +222,6 @@ let filterLoop =  () => {
 
             });
 
-            //TODO sort vinktars
-            // uniques.forEach((item) => {
-            //     if (item.name === 'Vessel of Vinktar') {
-            //         console.log(JSON.stringify(item, null, 2));
-            //     }
-            // };
 
             //DEBUG STUFF BELOW HERE
 
