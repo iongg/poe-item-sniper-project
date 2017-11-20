@@ -265,7 +265,7 @@ let filterLoop = async () => {
             k++;
         });
         let rollingAverage = average/k;
-        console.log(rollingAveragesArray);
+        // console.log(rollingAveragesArray);
         console.log(`Moving average time it took to execute the last ${k}: ${rollingAverage.toFixed(2)}s`);
         console.log('////\n');
         await setTimeout(filterLoop, 1001);
