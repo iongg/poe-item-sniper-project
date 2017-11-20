@@ -101,6 +101,7 @@ getCurrencyToChaosRatio('Exalted Orb').then((ratio) =>{
     // console.log(exaltToChaos);
 });
 
+let rollingAveragesArray: any[] = [];
 //Gets stashes from GGG API, then filters them
 let filterLoop = async () => {
     try {
@@ -240,7 +241,7 @@ let filterLoop = async () => {
             latestID = nextId;
 
             console.log(`Next change id: ${nextId}`);
-            console.log(`Time it took to execute Get request: ${endTimeGet}s`);
+            console.log(`Time it took to execute Get request: ${endTimeGet.toFixed(2)}s`);
         } else {
             console.log(`Reached end of stash stream`);
             console.log(`Next change id: ${nextId}`);
@@ -249,7 +250,23 @@ let filterLoop = async () => {
 
         //End timing for the rest of the function
         let endTimeGeneral = (Date.now() - startTime)/1000;
-        console.log(`Time it took to executethe whole thing: ${endTimeGeneral}s`);
+        console.log(`Time it took to executethe whole thing: ${endTimeGeneral.toFixed(2)}s`);
+
+        if (rollingAveragesArray.length < 5) {
+            rollingAveragesArray.push(endTimeGeneral);
+        } else {
+            rollingAveragesArray.shift();
+            rollingAveragesArray.push(endTimeGeneral);
+        }
+        let average = 0;
+        let k = 0;
+        rollingAveragesArray.forEach((time) => {
+            average += time;
+            k++;
+        });
+        let rollingAverage = average/k;
+        console.log(rollingAveragesArray);
+        console.log(`Moving average time it took to execute the last ${k}: ${rollingAverage.toFixed(2)}s`);
         console.log('////\n');
         await setTimeout(filterLoop, 1001);
 
