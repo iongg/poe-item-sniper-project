@@ -118,7 +118,6 @@ let filterLoop = async () => {
 
         //Filters out stashes that have no items, and stashes not in the currently assigned league
         let leagueStashes = _.filter(response.data.stashes, (stash) => {
-
             if (stash.public && stash.items.length > 0) {
                 return stash.items[0].league === currentLeague;
             } else {
@@ -136,34 +135,30 @@ let filterLoop = async () => {
                 stash.items.forEach((item) => {
                     //If the Item IS UNIQUE, ISNT CORRUPTED, IS IDENTIFIED, AND HAS A NOTE
                     if (item.frameType === 3 && !item.corrupted && item.identified && item.note) {
-                        //Store the actual note in another place, replace note with the chaos value of the item,
-                        //trim unique name from the way its presented in the public stash api
 
-                        //Copy the note for value conversion into an appropriate property
-                        item.price = item.note;
-                        //Replaces the ~b/o and ~price with nothing
-                        item.price = item.price.replace('~b/o', '');
-                        item.price = item.price.replace('~price', '');
-                        //Trims white spaces on the ends
-                        item.price = item.price.trim();
+                        let price = item.note.replace('~b/o', '').replace('~price', '').trim();//Replaces the ~b/o and ~price with nothing, trims whitespaces at beginning and end
 
-                        //if the item is priced in exalts, replaces the exa in the string with nothing
-                        //trims the string again, and converts the string to a number and converts that into the chaos equivalent
-                        if (item.price.includes('exa')) {
-                            item.price = item.price.replace('exa', '');
-                            item.price = item.price.trim();
-                            item.price = Number(item.price) * exaltToChaos;
-                            //If item is already priced in chaos, just replaces 'chaos' with nothing,
-                            // trims the string and converts the stringto a number
-                        } else if (item.price.includes('chaos')) {
-                            item.price = item.price.replace('chaos', '');
-                            item.price = item.price.trim();
-                            item.price = Number(item.price);
+
+                        //Removes extra text depending on what currency the item is price in
+                        //Trims white spaces
+                        //Converts to number
+                        //Converts chaos to exalt and other way around and stores them in the item
+                        if (price.includes('exa')) {
+                            item.exaltedValue = Number(price.replace('exa', '').trim());
+                            item.chaosValue = item.exaltedValue * exaltToChaos;
+
+
+                        } else if (price.includes('chaos')) {
+                            item.chaosValue = Number(price.replace('chaos', '').trim());
+                            item.exaltedValue = Number((item.chaosValue / exaltToChaos).toFixed(3));
+
                         } else {
                             item.note = '';
-                            item.price = '';
+                            item.chaosValue = '';
+                            item.exaltedValue = '';
                         }
 
+                        // console.log(JSON.stringify(item));
                         //Trims extra data in the name string not related to the actual name of the item.
                         item.name = item.name.slice(item.name.lastIndexOf('>') + 1);
 
@@ -191,38 +186,44 @@ let filterLoop = async () => {
                         if (links < 5) {
                             links = 0
                         }
-                        item.sockets = links;
+                        item.links = links;
 
                         //Sort vinktar flasks into the right category, using the same format as the variant variable on poe.ninja
                         if (item.name === 'Vessel of Vinktar') {
                             item.explicitMods.forEach((mod) => {
                                 if (mod.includes('Spells')) {
                                     item.variant = "Added Spells";
-                                    console.log(`---------------------------spells`);
                                 } else if (mod.includes('Attacks')) {
                                     item.variant = "Added Attacks";
-                                    console.log(`---------------------------attacks`);
                                 } else if (mod.includes('Penetrates')) {
                                     item.variant = "Penetration";
-                                    console.log(`---------------------------pen`);
                                 } else if (mod.includes('Converted')) {
                                     item.variant = "Conversion";
-                                    console.log(`---------------------------convert`);
                                 }
                             });
-                            console.log(JSON.stringify(item));
-                            console.log(item.variant);
+                            // console.log(JSON.stringify(item));
+                            // console.log(item.variant);
                         }
-                        //Push an items that passed the check to an array
+                        // Push an items that passed the check to an array
 
-                        //     pricedUniques.forEach((pricedItem) => {
-                        //         if (pricedItem.name === 'Vessel of Vinktar' && item.name === 'Vessel of Vinktar') {
-                        //             if (pricedItem.variant === item.variant) {
-                        //
-                        //             }
-                        //         }
-                        uniques.push(item);
-                        // }
+                        pricedUniques.forEach((pricedItem) => {
+                            if (pricedItem.name === item.name && pricedItem.links === item.links) {
+                                if (item.variant && pricedItem.variant){
+                                    if(item.variant === pricedItem.variant){
+                                        item.priceRatio = Number((pricedItem.chaosValue/item.chaosValue).toFixed(3));
+                                        item.expectedChaos = pricedItem.chaosValue;
+                                        item.expectedExalt = Number((pricedItem.chaosValue/exaltToChaos).toFixed(2));
+                                        console.log(JSON.stringify(item));
+                                    }
+                                } else {
+                                    item.priceRatio = Number((pricedItem.chaosValue/item.chaosValue).toFixed(3));
+                                    item.expectedChaos = pricedItem.chaosValue;
+                                    item.expectedExalt = Number((pricedItem.chaosValue/exaltToChaos).toFixed(2));
+                                    console.log(JSON.stringify(item));
+                                }
+                            }
+
+                        })
                     }
                 });
             } catch (e) {
@@ -283,7 +284,16 @@ let latestID: string;
 
 getLatestID().then((id) => {
     latestID = id;
-    filterLoop();
+    getUniquePrices().then((filteredUniques) => {
+        pricedUniques = filteredUniques;
+        // console.log(pricedUniques.length);
+        getCurrencyToChaosRatio('Exalted Orb').then((ratio) =>{
+            exaltToChaos = ratio;
+            filterLoop();
+            // console.log(exaltToChaos);
+        });
+    });
+
 });
 
 
