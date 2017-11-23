@@ -127,8 +127,13 @@ let getUniquePrices = async () => {
 
 
                            });
+                           mod.text = string;
+
                            // console.log(`FINAL STRING ${string} \n`);
+                       } else {
+                           mod.optional = true;
                        }
+
                        // if (count>0) {
                        //     console.log(mod);
                        //     console.log(`----------${count}------\n `);
@@ -271,6 +276,17 @@ let filterLoop = async () => {
                                         item.expectedExalt = Number((pricedItem.chaosValue/exaltToChaos).toFixed(2));
                                         uniques.push(item);
                                         // console.log(JSON.stringify(item));
+                                        for (let i = 0; i < item.explicitMods.length; i++){
+                                            if (!pricedItem.explicitModifiers[i].optional) {
+                                                let itemModsArray: any[] = _.words(item.explicitMods[i]);
+                                                let modAverageArray: any[] = _.words(pricedItem.explicitModifiers[i].text);
+                                                itemModsArray = _.map(itemModsArray, _.parseInt);
+                                                modAverageArray = _.map(modAverageArray, _.parseInt);
+                                                itemModsArray = _.remove(itemModsArray, (n) => !!n);
+                                                modAverageArray = _.remove(modAverageArray, (n) => !!n);
+                                                // console.log(`ITEM MODS NUMBERS ${itemModsArray}\n MOD AVERAGE NUMBERS ${modAverageArray}`);
+                                            }
+                                        }
                                     }
                                 } else {
                                     item.priceRatio = Number((pricedItem.chaosValue/item.chaosValue).toFixed(3));
@@ -278,6 +294,19 @@ let filterLoop = async () => {
                                     item.expectedExalt = Number((pricedItem.chaosValue/exaltToChaos).toFixed(2));
                                     uniques.push(item);
                                     // console.log(JSON.stringify(item));
+                                    for (let i = 0; i < item.explicitMods.length; i++){
+                                        if (!pricedItem.explicitModifiers[i].optional) {
+                                            let itemModsArray: any[] = _.words(item.explicitMods[i]);
+                                            let modAverageArray: any[] = _.words(pricedItem.explicitModifiers[i].text);
+                                            itemModsArray = _.map(itemModsArray, _.parseInt);
+                                            modAverageArray = _.map(modAverageArray, _.parseInt);
+                                            itemModsArray = _.remove(itemModsArray, (n) => !!n);
+                                            modAverageArray = _.remove(modAverageArray, (n) => !!n);
+                                            // console.log(`ITEM MODS NUMBERS ${itemModsArray}\n MOD AVERAGE NUMBERS ${modAverageArray}`);
+                                        }
+                                    }
+
+
                                 }
                             }
 
