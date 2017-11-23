@@ -20,7 +20,7 @@ let exaltToChaos: number;
 let pricedUniques: any[];
 
 
-// let latestID = '107295783-112515506-105611526-121592033-113798215';
+
 
 let getLatestID = async () => {
     try {
@@ -84,6 +84,58 @@ let getUniquePrices = async () => {
             if(item.chaosValue >= chaosCutOffPoint && item.count >= 10) {
                 filteredUniques.push(item)
             }
+        });
+
+        filteredUniques.forEach((item) => {
+           if(item.explicitModifiers){
+               item.explicitModifiers.forEach((mod) => {
+                   if (!mod.optional) {
+                       let string = mod.text;
+                       let place = string.indexOf('(');
+                       let position : any[] = [];
+
+                       while (place !== -1) {
+                           position.push(place);
+                           place = string.indexOf('(', place + 1);
+                       }
+
+                       if (position.length) {
+                           // console.log(`PLACE ARRAY ${position}\n`);
+                           // console.log(`INITIAL STRING ${string}`);
+                           let difference = 0;
+                           position.forEach((pos1) => {
+
+                               if (difference) {
+                                   pos1 = pos1 - difference
+                               }
+                               let pos2 = string.indexOf('-', pos1);
+                               let pos3 = string.indexOf(')', pos2);
+                               // console.log(`FIRST POSITION ${pos1} \nSECOND POSITION ${pos2} \nTHIRD POSITION ${pos3}`)
+
+                               let num1 = Number(string.slice(pos1+1,pos2));
+                               let num2 = Number(string.slice(pos2+1,pos3));
+                               // console.log(`FIRST NUMBER ${num1} \nSECOND NUMBER ${num2}`);
+
+                               let average = (num1+num2)/2;
+                               let subString1 = string.slice(0,pos1);
+                               let subString2 = string.slice(pos3+1);
+                               // console.log(`FIRST SUBSTRING ${subString1} \nSECOND SUBSTRING ${subString2}`);
+
+                               let newString = subString1 + `${average}` + subString2;
+                               difference = string.length - newString.length;
+                               string = newString;
+
+
+                           });
+                           // console.log(`FINAL STRING ${string} \n`);
+                       }
+                       // if (count>0) {
+                       //     console.log(mod);
+                       //     console.log(`----------${count}------\n `);
+                       // }
+                   }
+               })
+           }
         });
 
         return filteredUniques
@@ -162,6 +214,7 @@ let filterLoop = async () => {
                         //Trims extra data in the name string not related to the actual name of the item.
                         item.name = item.name.slice(item.name.lastIndexOf('>') + 1);
 
+
                         //Count sockets in a group to determine how many links an item has, should be able to deal with reverse 5l's
 
                         //Socket 0 accounts for normal 5links and 6 links
@@ -204,6 +257,9 @@ let filterLoop = async () => {
                             // console.log(JSON.stringify(item));
                             // console.log(item.variant);
                         }
+                        //TODO Do comparisons between the average of a mods range
+                        //TODO Compare that
+
                         // Push an items that passed the check to an array
 
                         pricedUniques.forEach((pricedItem) => {
@@ -213,13 +269,15 @@ let filterLoop = async () => {
                                         item.priceRatio = Number((pricedItem.chaosValue/item.chaosValue).toFixed(3));
                                         item.expectedChaos = pricedItem.chaosValue;
                                         item.expectedExalt = Number((pricedItem.chaosValue/exaltToChaos).toFixed(2));
-                                        console.log(JSON.stringify(item));
+                                        uniques.push(item);
+                                        // console.log(JSON.stringify(item));
                                     }
                                 } else {
                                     item.priceRatio = Number((pricedItem.chaosValue/item.chaosValue).toFixed(3));
                                     item.expectedChaos = pricedItem.chaosValue;
                                     item.expectedExalt = Number((pricedItem.chaosValue/exaltToChaos).toFixed(2));
-                                    console.log(JSON.stringify(item));
+                                    uniques.push(item);
+                                    // console.log(JSON.stringify(item));
                                 }
                             }
 
@@ -238,7 +296,7 @@ let filterLoop = async () => {
         let nextId = response.data.next_change_id;
 
         //Check if theres a new stash ID
-        if(nextId!==latestID) {
+        if (nextId!==latestID) {
             latestID = nextId;
 
             console.log(`Next change id: ${nextId}`);
@@ -252,8 +310,8 @@ let filterLoop = async () => {
         //End timing for the rest of the function
         let endTimeGeneral = (Date.now() - startTime)/1000;
         console.log(`Time it took to executethe whole thing: ${endTimeGeneral.toFixed(2)}s`);
-
-        if (rollingAveragesArray.length < 5) {
+        let number = 50;
+        if (rollingAveragesArray.length < number) {
             rollingAveragesArray.push(endTimeGeneral);
         } else {
             rollingAveragesArray.shift();
@@ -284,6 +342,7 @@ let latestID: string;
 
 getLatestID().then((id) => {
     latestID = id;
+    // let latestID = '0';
     getUniquePrices().then((filteredUniques) => {
         pricedUniques = filteredUniques;
         // console.log(pricedUniques.length);
